@@ -1,8 +1,8 @@
 /*
  * ESP32PWM.h
  *
- *  Created on: Sep 22, 2018
- *      Author: hephaestus
+ *  Created on: Oct 7, 2023
+ *      Author: Pankaj
  */
 
 #ifndef LIBRARIES_ESP32SERVO_SRC_ESP32PWM_H_

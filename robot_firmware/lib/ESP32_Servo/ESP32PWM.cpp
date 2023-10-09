@@ -1,8 +1,8 @@
 /*
  * ESP32PWM.cpp
  *
- *  Created on: Sep 22, 2018
- *      Author: hephaestus
+ *  Created on: Oct 7, 2023
+ *      Author: Pankaj
  */
 
 #include <ESP32PWM.h>
