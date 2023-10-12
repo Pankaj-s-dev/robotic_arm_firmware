@@ -96,15 +96,11 @@ void loop()
 
   WiFiClient client;
   if (client.connect(host, port)) {
-        WebSerial.println("Connected to server successful!");
+        Serial.println("Connected to server successful!");
         client.print("Hello from ESP32!");
         delay(1000);
-        return;
+        Serial.println(client.readString());
     }
-
-  
-  
-
 
   }
 

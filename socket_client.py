@@ -7,26 +7,31 @@ s.bind(('0.0.0.0', 8090 ))
 s.listen(0)                 
  
 while True:
- 
-    client, addr = s.accept()
- 
-    while True:
-        content = client.recv(32)
- 
-        if len(content) ==0:
-           break
- 
-        else:
-            print(content)
-        
-        time.sleep(1)
+    try:
+        client, addr = s.accept()
+    
+        while True:
+            content = client.recv(1024)
+    
+            if len(content) ==0:
+                break
+    
+            else:
+                print(content.decode())
+            
+            time.sleep(1)
 
-        write = "hellow from script"
+            write = "hellow from script"
 
-        client.send(write.encode())
+            client.send(write.encode())
 
-        time.sleep(1)
- 
+            time.sleep(1)
+
+    except KeyboardInterrupt:
+        print("exiting")
         print("Closing connection")
+        s.detach()
+        s.close()
         client.close()
+        client.detach()
         exit()
