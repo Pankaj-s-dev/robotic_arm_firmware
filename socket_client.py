@@ -14,7 +14,7 @@ while True:
     tcp_msg = "hellow"
     client.send(tcp_msg.encode())
     print("Hellow")
-    time.sleep(1)
+   time.sleep(1)
     msf = client.recv(1204)
     print(msf)
     time.sleep(1)

@@ -86,7 +86,7 @@ void jog_executor(int pos, int servo_speed, int servo_id)
 }
 
 void read(){
-      // line = client.readString();
+    line = client.readString();
     incomming = line.c_str();
     int joint_pos, speed, servo_id;
     sscanf(incomming, "%s{%d}{%d}{%d}", execution_type, &joint_pos, &speed, &servo_id);
@@ -145,19 +145,27 @@ void loop()
 
   if (client.connect(host, port)) {
 
+    line = client.readString();
+    incomming = line.c_str();
+    int joint_pos, speed, servo_id;
+    sscanf(incomming, "%s{%d}{%d}{%d}", execution_type, &joint_pos, &speed, &servo_id);
 
-      // String line = ;
-    // incomming = line.c_str();
-    // sscanf(incomming, "%s{%d}{%d}{%d}{%d}{%d}{%d}{%d}", execution_type, &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &speed);
-      // Serial.print("Trajectory execution requested  ->");
-      Serial.println(client.readString());
-      delay(1000);
-      client.write("Hellow from esp");
-      delay(1000);
-
-
-    // Serial.println("Connected to server successful!");
-    // delay(4000);
+    if (execution_type == "j"){
+      jog_executor(joint_pos, speed, servo_id);
+      Serial.print("Jog execution requested");
+      Serial.println(line);
+      client.write("ok");
+    }
+    else if (execution_type == "t"){
+      String line = client.readString();
+      incomming = line.c_str();
+      sscanf(incomming, "%s{%d}{%d}{%d}{%d}{%d}{%d}{%d}", execution_type, &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &speed);
+      Serial.print("Trajectory execution requested");
+      Serial.println(line);
+      client.write("ok");
+    }
+    incoming_data_reset();
+    delay(1);
     
   }
   }
