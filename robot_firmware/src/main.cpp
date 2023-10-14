@@ -4,6 +4,9 @@
 #include <AsyncTCP.h>
 #include <../.pio/libdeps/esp32dev/AsyncTCP-esphome/src/AsyncTCP.h>
 #include <../lib/web_serial/src/WebSerial.h>  
+using namespace std;
+#include <iostream>
+#include <string.h>
 
 // Constants
 const char* ssid = "ESP32_Access_point";
@@ -13,15 +16,6 @@ const char* password = "ESP32@123";
 AsyncWebServer server(8090);
 // Called when receiving any WebSocket message
 
-/* Message callback of WebSerial */
-void recvMsg(uint8_t *data, size_t len){
-  WebSerial.println("Received Data...");
-  String d = "";
-  for(int i=0; i < len; i++){
-    d += char(data[i]);
-  }
-  WebSerial.println(d);
-}
 
 
 Servo J0; 
@@ -45,6 +39,7 @@ const char *execution_type = "";
 
 const uint16_t port = 8090;
 const char * host = "192.168.4.2";
+bool connection_complted = false;
 
 u_int32_t prev_millis = 0;
 u_int32_t current_millis = 0;
@@ -85,27 +80,6 @@ void jog_executor(int pos, int servo_speed, int servo_id)
   }
 }
 
-void read(){
-    line = client.readString();
-    incomming = line.c_str();
-    int joint_pos, speed, servo_id;
-    sscanf(incomming, "%s{%d}{%d}{%d}", execution_type, &joint_pos, &speed, &servo_id);
-
-    if (execution_type == "j"){
-      // jog_executor(joint_pos, speed, servo_id);
-      Serial.print("Jog execution requested");
-      Serial.println(line);
-    }
-    else if (execution_type == "t"){
-      // String line = client.readString();
-      incomming = line.c_str();
-      sscanf(incomming, "%s{%d}{%d}{%d}{%d}{%d}{%d}{%d}", execution_type, &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &speed);
-      Serial.print("Trajectory execution requested");
-      Serial.println(line);
-    }
-    incoming_data_reset();
-    delay(1000);
-    }
 
 void setup() {
   
@@ -144,29 +118,52 @@ void loop()
   WiFiClient client;
 
   if (client.connect(host, port)) {
+    if (!connection_complted){
+      line = client.readString();
+      Serial.println(line);
+      delay(1);
+      client.write("ok");
+      connection_complted = true;
+    }
 
     line = client.readString();
-    incomming = line.c_str();
-    int joint_pos, speed, servo_id;
-    sscanf(incomming, "%s{%d}{%d}{%d}", execution_type, &joint_pos, &speed, &servo_id);
-
-    if (execution_type == "j"){
-      jog_executor(joint_pos, speed, servo_id);
-      Serial.print("Jog execution requested");
+    if (line.length() == 0){
+      Serial.print("No data");
       Serial.println(line);
-      client.write("ok");
+      client.flush();
+      client.clearWriteError();
+      client.stop();
     }
-    else if (execution_type == "t"){
-      String line = client.readString();
+    else{
+      Serial.println(line);
       incomming = line.c_str();
-      sscanf(incomming, "%s{%d}{%d}{%d}{%d}{%d}{%d}{%d}", execution_type, &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &speed);
-      Serial.print("Trajectory execution requested");
-      Serial.println(line);
+      int joint_pos, speed, servo_id;
+      sscanf(incomming, "%s{%d}{%d}{%d}", execution_type, &joint_pos, &speed, &servo_id);
       client.write("ok");
     }
+  
+    
+    
+    // if (execution_type == "j"){
+    //   jog_executor(joint_pos, speed, servo_id);
+    //   Serial.print("Jog execution requested");
+    //   Serial.println(line);
+    //   client.write("ok");
+    // }
+    // else if (execution_type == "t"){
+    //   String line = client.readString();
+    //   incomming = line.c_str();
+    //   sscanf(incomming, "%s{%d}{%d}{%d}{%d}{%d}{%d}{%d}", execution_type, &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &speed);
+    //   Serial.print("Trajectory execution requested");
+    //   Serial.println(line);
+    //   client.write("ok");
+    // }
     incoming_data_reset();
     delay(1);
-    
+  }
+
+  else{
+    connection_complted = false;
   }
   }
 
