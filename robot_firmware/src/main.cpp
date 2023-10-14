@@ -10,7 +10,7 @@ const char* ssid = "ESP32_Access_point";
 const char* password = "ESP32@123";
 
 
-AsyncWebServer server(80);
+AsyncWebServer server(8090);
 // Called when receiving any WebSocket message
 
 /* Message callback of WebSerial */
@@ -38,12 +38,77 @@ int J3_pwm_pin = 26;
 int J4_pwm_pin = 27;
 int gripper_pwm_pin = 14;
 
-int pos = 90;
+int J0_POS, J1_POS, J2_POS, J3_POS, J4_POS, J5_POS;
+String line = "";
+const char *incomming = "";
+const char *execution_type = "";
 
 const uint16_t port = 8090;
 const char * host = "192.168.4.2";
 
+u_int32_t prev_millis = 0;
+u_int32_t current_millis = 0;
+
+void incoming_data_reset(){
+  J0_POS = J1_POS = J2_POS = J3_POS = J4_POS = J5_POS = 0;
+  line = "";
+  incomming = "";
+  execution_type = "";
+}
+
+void jog_executor(int pos, int servo_speed, int servo_id)
+{
+  switch (servo_id)
+  {
+  case 1:
+    J0.write(pos);
+    break;
+  
+  case 2:
+    J1.write(pos);
+    break;
+  case 3:
+    J2.write(pos);
+    break;
+  case 4:
+    J3.write(pos);
+    break;
+  case 5:
+    J4.write(pos);
+    break;
+  case 6:
+    gripper.write(pos);
+    break;
+  default:
+    Serial.println("Wrong servo id");
+    break;
+  }
+}
+
+void read(){
+      // line = client.readString();
+    incomming = line.c_str();
+    int joint_pos, speed, servo_id;
+    sscanf(incomming, "%s{%d}{%d}{%d}", execution_type, &joint_pos, &speed, &servo_id);
+
+    if (execution_type == "j"){
+      // jog_executor(joint_pos, speed, servo_id);
+      Serial.print("Jog execution requested");
+      Serial.println(line);
+    }
+    else if (execution_type == "t"){
+      // String line = client.readString();
+      incomming = line.c_str();
+      sscanf(incomming, "%s{%d}{%d}{%d}{%d}{%d}{%d}{%d}", execution_type, &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &speed);
+      Serial.print("Trajectory execution requested");
+      Serial.println(line);
+    }
+    incoming_data_reset();
+    delay(1000);
+    }
+
 void setup() {
+  
   Serial.begin(9600);
   delay(1000);
   Serial.println("Initialization has been started");
@@ -62,45 +127,38 @@ void setup() {
   J4.attach(J4_pwm_pin, 500, 2400);
   gripper.attach(gripper_pwm_pin, 500, 2400);
 
-  pinMode(2, OUTPUT);
   Serial.println("Initializition has been done !");
 
-
-    // Connect to access point
+  // Connect to access point
   WiFi.softAP(ssid, password);
-  IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
-  Serial.println(IP);
+  Serial.println(WiFi.softAPIP());
 
-  WebSerial.begin(&server);
-    /* Attach Message Callback */
-  WebSerial.msgCallback(recvMsg);
   server.begin();
-  WebSerial.print(F("IP address: "));
-  WebSerial.println(WiFi.softAPIP());
+  
+
 }
 
 void loop()
   {
-
-  J0.write(pos);
-  J1.write(pos);
-  J2.write(pos);
-  J3.write(pos);
-  J4.write(pos);
-  gripper.write(pos);
-  digitalWrite(2, HIGH);
-  delay(500);
-  digitalWrite(2, LOW);
-  delay(500);
-
   WiFiClient client;
-  if (client.connect(host, port)) {
-        Serial.println("Connected to server successful!");
-        client.print("Hello from ESP32!");
-        delay(1000);
-        Serial.println(client.readString());
-    }
 
+  if (client.connect(host, port)) {
+
+
+      // String line = ;
+    // incomming = line.c_str();
+    // sscanf(incomming, "%s{%d}{%d}{%d}{%d}{%d}{%d}{%d}", execution_type, &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &speed);
+      // Serial.print("Trajectory execution requested  ->");
+      Serial.println(client.readString());
+      delay(1000);
+      client.write("Hellow from esp");
+      delay(1000);
+
+
+    // Serial.println("Connected to server successful!");
+    // delay(4000);
+    
+  }
   }
 

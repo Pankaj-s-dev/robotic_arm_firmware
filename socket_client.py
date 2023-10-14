@@ -6,32 +6,17 @@ s = socket.socket()
 s.bind(('0.0.0.0', 8090 ))
 s.listen(0)                 
  
+
+client, addr = s.accept()
+
 while True:
-    try:
-        client, addr = s.accept()
-    
-        while True:
-            content = client.recv(1024)
-    
-            if len(content) ==0:
-                break
-    
-            else:
-                print(content.decode())
-            
-            time.sleep(1)
+    # time.sleep(1)
+    tcp_msg = "hellow"
+    client.send(tcp_msg.encode())
+    print("Hellow")
+    time.sleep(1)
+    msf = client.recv(1204)
+    print(msf)
+    time.sleep(1)
 
-            write = "hellow from script"
 
-            client.send(write.encode())
-
-            time.sleep(1)
-
-    except KeyboardInterrupt:
-        print("exiting")
-        print("Closing connection")
-        s.detach()
-        s.close()
-        client.close()
-        client.detach()
-        exit()
