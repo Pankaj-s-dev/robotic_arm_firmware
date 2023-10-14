@@ -1,22 +1,5 @@
 #include <Arduino.h>
 #include "./../lib/ESP32_Servo/ESP32Servo.h"
-#include <WiFi.h>
-#include <AsyncTCP.h>
-#include <../.pio/libdeps/esp32dev/AsyncTCP-esphome/src/AsyncTCP.h>
-#include <../lib/web_serial/src/WebSerial.h>  
-using namespace std;
-#include <iostream>
-#include <string.h>
-
-// Constants
-const char* ssid = "ESP32_Access_point";
-const char* password = "ESP32@123";
-
-
-AsyncWebServer server(8090);
-// Called when receiving any WebSocket message
-
-
 
 Servo J0; 
 Servo J1;
@@ -37,19 +20,6 @@ String line = "";
 const char *incomming = "";
 const char *execution_type = "";
 
-const uint16_t port = 8090;
-const char * host = "192.168.4.2";
-bool connection_complted = false;
-
-u_int32_t prev_millis = 0;
-u_int32_t current_millis = 0;
-
-void incoming_data_reset(){
-  J0_POS = J1_POS = J2_POS = J3_POS = J4_POS = J5_POS = 0;
-  line = "";
-  incomming = "";
-  execution_type = "";
-}
 
 void jog_executor(int pos, int servo_speed, int servo_id)
 {
@@ -83,7 +53,7 @@ void jog_executor(int pos, int servo_speed, int servo_id)
 
 void setup() {
   
-  Serial.begin(9600);
+  Serial.begin(115200);
   delay(1000);
   Serial.println("Initialization has been started");
 
@@ -102,68 +72,12 @@ void setup() {
   gripper.attach(gripper_pwm_pin, 500, 2400);
 
   Serial.println("Initializition has been done !");
-
-  // Connect to access point
-  WiFi.softAP(ssid, password);
-  Serial.print("AP IP address: ");
-  Serial.println(WiFi.softAPIP());
-
-  server.begin();
-  
-
 }
 
-void loop()
-  {
-  WiFiClient client;
-
-  if (client.connect(host, port)) {
-    if (!connection_complted){
-      line = client.readString();
-      Serial.println(line);
-      delay(1);
-      client.write("ok");
-      connection_complted = true;
-    }
-
-    line = client.readString();
-    if (line.length() == 0){
-      Serial.print("No data");
-      Serial.println(line);
-      client.flush();
-      client.clearWriteError();
-      client.stop();
-    }
-    else{
-      Serial.println(line);
-      incomming = line.c_str();
-      int joint_pos, speed, servo_id;
-      sscanf(incomming, "%s{%d}{%d}{%d}", execution_type, &joint_pos, &speed, &servo_id);
-      client.write("ok");
-    }
-  
-    
-    
-    // if (execution_type == "j"){
-    //   jog_executor(joint_pos, speed, servo_id);
-    //   Serial.print("Jog execution requested");
-    //   Serial.println(line);
-    //   client.write("ok");
-    // }
-    // else if (execution_type == "t"){
-    //   String line = client.readString();
-    //   incomming = line.c_str();
-    //   sscanf(incomming, "%s{%d}{%d}{%d}{%d}{%d}{%d}{%d}", execution_type, &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &speed);
-    //   Serial.print("Trajectory execution requested");
-    //   Serial.println(line);
-    //   client.write("ok");
-    // }
-    incoming_data_reset();
-    delay(1);
+void loop(){
+  if (Serial.available()){
+    Serial.println(Serial.readString());
+    delay(100);
   }
-
-  else{
-    connection_complted = false;
-  }
-  }
+}
 
