@@ -76,12 +76,19 @@ void jog_executor()
 }
 
 void trajectroy_executor(){
+  // int J0_diff = J0_POS-J0.read();
+  // J0_diff=J0_diff/2;
+  // for (int8_t i = 0; i < J0_diff; i++)
+  // {
+    
+  // }
   J0.write(J0_POS);
   J1.write(J1_POS);
   J2.write(J2_POS);
   J3.write(J3_POS);
   J4.write(J4_POS);
   J5.write(J5_POS);
+  Serial.println("ok");
 }
 
 void PWM_INIT(){
@@ -166,13 +173,25 @@ void loop(){
     line = Serial.readString();
     incomming = line.c_str();
     WebSerial.println(line);
+    sscanf(incomming, "[%i]", &execution_type);
 
-    sscanf(incomming, "[%i][%i][%i][%i][%i][%i][%i]", &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &servo_speed);
-    web_serial_pos_state();
-    delay(2000);
-    trajectroy_executor();
-    Serial.println("ok");
-    delay(100);
+    if (execution_type == 1)  // Homing of robot requested
+    {
+      home_robot();
+    }
+    else if (execution_type == 2)  // jog mode
+    {
+      sscanf(incomming, "[%i][%i][%i][%i]", &execution_type, &jog_pos, &servo_speed, &servo_id);
+      jog_executor();
+      // Serial.println("ok");
+    }
+    else if (execution_type == 3 or execution_type == 4)  // teach mode and run mode
+    {
+      sscanf(incomming, "[%i][%i][%i][%i][%i][%i][%i][%i]",&execution_type, &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &servo_speed);
+      trajectroy_executor();
+    }
+    
+    //web_serial_pos_state();
   }
 }
 
