@@ -106,6 +106,36 @@ void PWM_INIT(){
   J5.attach(J5_pwm_pin, 500, 2400);
 }
 
+void web_serial_pos_state(){
+  WebSerial.println(J0_POS);
+  WebSerial.println(J1_POS);
+  WebSerial.println(J2_POS);
+  WebSerial.println(J3_POS);
+  WebSerial.println(J4_POS);
+  WebSerial.println(J5_POS);
+  WebSerial.println(servo_speed);
+}
+
+void home_robot_1(){
+  J0_POS = 90;
+  J1_POS = 100;
+  J2_POS = 90;
+  J3_POS = 70;
+  J4_POS = 90;
+  J5_POS = 100;
+  trajectroy_executor();
+}
+
+void home_robot(){
+  J0_POS = 90;
+  J1_POS = 130;
+  J2_POS = 130;
+  J3_POS = 180;
+  J4_POS = 90;
+  J5_POS = 100;
+  trajectroy_executor();
+}
+
 void setup() {
   
   Serial.begin(115200);
@@ -127,6 +157,8 @@ void setup() {
   /* Attach Message Callback */
   WebSerial.msgCallback(recvMsg);
   server.begin();
+  delay(1000);
+  home_robot();
 }
 
 void loop(){
@@ -136,7 +168,8 @@ void loop(){
     WebSerial.println(line);
 
     sscanf(incomming, "[%i][%i][%i][%i][%i][%i][%i]", &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &servo_speed);
-    WebSerial.println(servo_speed);
+    web_serial_pos_state();
+    delay(2000);
     trajectroy_executor();
     Serial.println("ok");
     delay(100);
