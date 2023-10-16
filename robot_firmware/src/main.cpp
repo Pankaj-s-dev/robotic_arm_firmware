@@ -47,7 +47,9 @@ int servo_id = 0;
 
 
 void jog_executor()
+
 {
+  Serial.println("ok");
   switch (servo_id)
   {
   case 1:
@@ -183,7 +185,6 @@ void loop(){
     {
       sscanf(incomming, "[%i][%i][%i][%i]", &execution_type, &jog_pos, &servo_speed, &servo_id);
       jog_executor();
-      // Serial.println("ok");
     }
     else if (execution_type == 3 or execution_type == 4)  // teach mode and run mode
     {
