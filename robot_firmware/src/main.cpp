@@ -9,6 +9,12 @@
 const char* ssid = "ESP32_Access_point";
 const char* password = "ESP32@123";
 
+/*
+0.17sec/60deg 
+
+2.8mills /1deg will assume 2mills/deg
+
+*/
 
 AsyncWebServer server(80);
 // Called when receiving any WebSocket message
@@ -77,13 +83,51 @@ void jog_executor()
   }
 }
 
-void trajectroy_executor(){
-  // int J0_diff = J0_POS-J0.read();
-  // J0_diff=J0_diff/2;
-  // for (int8_t i = 0; i < J0_diff; i++)
-  // {
+void smooth_drive(int starting_angle, int stoping_angle, int finishing_angle, bool inc_dec){
+  int counter = 2;
+  if (inc_dec)
+  {
+    for (starting_angle; starting_angle <= stoping_angle; starting_angle += counter)
+    {
+      J0.write(starting_angle);
+      delay(counter);
+      counter+=2;
+    }
+    J0.write(finishing_angle);
+    return;
+  }
+  else
+  {
+    for (starting_angle ; starting_angle >= stoping_angle; starting_angle=-counter)
+    {
+      J0.write(starting_angle);
+      delay(counter);
+      counter+=2;
+    }
+    J0.write(finishing_angle);
+    return;
     
-  // }
+  }
+  
+  
+}
+
+void smooth_trajectory_driver(){
+  int J0_diff = J0_POS-J0.read();
+  J0_diff=J0_diff/2;
+  if (J0_diff > 0){
+    smooth_drive(J0.read(), J0_diff, J0_POS, true);
+  }
+  else if (J0_diff < 0)
+  {
+    J0_diff = J0_diff*-1;
+    smooth_drive(J0.read(), J0_diff/2, J0_POS, false);
+  }
+  
+}
+
+void trajectroy_executor(){
+  if (J0.read() > J0_POS)
   J0.write(J0_POS);
   J1.write(J1_POS);
   J2.write(J2_POS);
@@ -91,6 +135,7 @@ void trajectroy_executor(){
   J4.write(J4_POS);
   J5.write(J5_POS);
   Serial.println("ok");
+  // Serial.println(J0.read());
 }
 
 void PWM_INIT(){
@@ -145,6 +190,12 @@ void home_robot(){
   trajectroy_executor();
 }
 
+void testing(){
+  J0_POS =Serial.parseInt();
+  trajectroy_executor();
+  // smooth_trajectory_driver();
+}
+
 void setup() {
   
   Serial.begin(115200);
@@ -172,6 +223,7 @@ void setup() {
 
 void loop(){
   if (Serial.available()){
+    // testing();
     line = Serial.readString();
     incomming = line.c_str();
     WebSerial.println(line);
