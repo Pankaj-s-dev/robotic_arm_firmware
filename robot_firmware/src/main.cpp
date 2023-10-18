@@ -5,9 +5,19 @@
 #include <../.pio/libdeps/esp32dev/AsyncTCP-esphome/src/AsyncTCP.h>
 #include <../lib/web_serial/src/WebSerial.h>  
 
-// Constants
+/*-------- WiFi Creditionals --------*/
 const char* ssid = "ESP32_Access_point";
 const char* password = "ESP32@123";
+
+/*---Function decelearation---*/
+void home_robot();
+void jog_executor();
+void smooth_drive(int starting_angle, int stoping_angle, int finishing_angle, bool inc_dec);
+void smooth_trajectory_driver();
+void web_serial_pos_state();
+void trajectroy_executor();
+bool readStringUntil(String& input, char until_c, size_t char_limit);
+
 
 /*
 0.17sec/60deg 
@@ -16,19 +26,9 @@ const char* password = "ESP32@123";
 
 */
 
-AsyncWebServer server(80);
-// Called when receiving any WebSocket message
+AsyncWebServer server(80);  //Async webserver for web serial
 
-/* Message callback of WebSerial */
-void recvMsg(uint8_t *data, size_t len){
-  WebSerial.println("Received Data...");
-  String d = "";
-  for(int i=0; i < len; i++){
-    d += char(data[i]);
-  }
-  WebSerial.println(d);
-}
-
+/*---- Servo constructor -----*/
 Servo J0; 
 Servo J1;
 Servo J2;
@@ -36,6 +36,7 @@ Servo J3;
 Servo J4;
 Servo J5;
 
+/*----- Servo PWM Pin INIT -----*/
 int J0_pwm_pin = 32;  
 int J1_pwm_pin = 33;
 int J2_pwm_pin = 25;
@@ -43,19 +44,32 @@ int J3_pwm_pin = 26;
 int J4_pwm_pin = 27;
 int J5_pwm_pin = 14;
 
+/*--------- Variable INIT for Execution ---------*/
 int J0_POS, J1_POS, J2_POS, J3_POS, J4_POS, J5_POS;
-String line = "";
+String read_msg = "";
 const char *incomming = "";
 int execution_type = 0;
 int servo_speed = 0;
 int jog_pos = 0;
 int servo_id = 0;
 
+/*----- Message callback of WebSerial -----*/
+void recvMsg(uint8_t *data, size_t len){
+  WebSerial.println("Received Data...");
+  String d = "";
+  for(int i=0; i < len; i++){
+    d += char(data[i]);
+  }
+  WebSerial.println(d);
+  if (d == "home"){
+    WebSerial.println("Homing robot...");
+    home_robot();
+  }
+}
 
+/*----------- Jog executer -----------*/
 void jog_executor()
-
 {
-  Serial.println("ok");
   switch (servo_id)
   {
   case 1:
@@ -77,8 +91,7 @@ void jog_executor()
     J5.write(jog_pos);
     break;
   default:
-    Serial.println("not ok");
-    WebSerial.println("not woking");
+    WebSerial.println("Error Occured.....");
     break;
   }
 }
@@ -108,8 +121,6 @@ void smooth_drive(int starting_angle, int stoping_angle, int finishing_angle, bo
     return;
     
   }
-  
-  
 }
 
 void smooth_trajectory_driver(){
@@ -134,13 +145,13 @@ void trajectroy_executor(){
   J4.write(J4_POS);
   J5.write(J5_POS);
   delay(10);
-  WebSerial.println("ok");
+  WebSerial.println("Trajectory executed");
   Serial.println("ok");
-  // Serial.println(J0.read());
 }
 
+/*---------- PWM Initialization ----------*/
 void PWM_INIT(){
-    // Allow allocation of all timers
+  // Allow allocation of all timers
 	ESP32PWM::allocateTimer(0);
 	ESP32PWM::allocateTimer(1);
 	ESP32PWM::allocateTimer(2);
@@ -152,7 +163,7 @@ void PWM_INIT(){
 	J3.setPeriodHertz(50);
   J4.setPeriodHertz(50);
 	J5.setPeriodHertz(50);
-  
+  //------ Attaching PWM Pin ------
   J0.attach(J0_pwm_pin, 500, 2400);
   J1.attach(J1_pwm_pin, 500, 2400);
   J2.attach(J2_pwm_pin, 500, 2400);
@@ -161,26 +172,17 @@ void PWM_INIT(){
   J5.attach(J5_pwm_pin, 500, 2400);
 }
 
+/*---------- Updating posiiton on web serial ----------*/
 void web_serial_pos_state(){
-  WebSerial.println(J0_POS);
-  WebSerial.println(J1_POS);
-  WebSerial.println(J2_POS);
-  WebSerial.println(J3_POS);
-  WebSerial.println(J4_POS);
-  WebSerial.println(J5_POS);
-  WebSerial.println(servo_speed);
+  WebSerial.print("J0 Pos : "); WebSerial.println(J0_POS);
+  WebSerial.print("J1 Pos : "); WebSerial.println(J1_POS);
+  WebSerial.print("J2 Pos : "); WebSerial.println(J2_POS);
+  WebSerial.print("J3 Pos : "); WebSerial.println(J3_POS);
+  WebSerial.print("J4 Pos : "); WebSerial.println(J4_POS);
+  WebSerial.print("J5 Pos : "); WebSerial.println(J5_POS);
 }
 
-void home_robot_1(){
-  J0_POS = 90;
-  J1_POS = 100;
-  J2_POS = 90;
-  J3_POS = 70;
-  J4_POS = 90;
-  J5_POS = 100;
-  trajectroy_executor();
-}
-
+/*---------- Robot home point ----------*/
 void home_robot(){
   J0_POS = 90;
   J1_POS = 130;
@@ -188,19 +190,35 @@ void home_robot(){
   J3_POS = 180;
   J4_POS = 90;
   J5_POS = 100;
+  WebSerial.println("Homing Done !");
   trajectroy_executor();
 }
 
-void testing(){
-  J0_POS =Serial.parseInt();
-  trajectroy_executor();
-  // smooth_trajectory_driver();
+/*---------- Reading data until given limit ----------*/
+bool readStringUntil(String& input, char until_c, size_t char_limit) {
+  WebSerial.print("reading unitll");
+  input = "";
+  while (Serial.available()) {
+    
+    char c = Serial.read();
+    WebSerial.print(c);
+    input += c;
+    if (c == until_c) {
+      return true;
+    }
+    if (input.length() >= char_limit) {
+      WebSerial.println();
+      return true;
+    }
+  }
+  WebSerial.println();
+  return false;
 }
 
+/*-------------------Void setup-------------------*/
 void setup() {
-  
   Serial.begin(115200);
-  delay(1000);
+  delay(500);
   Serial.println("Initialization has been started");
 
   PWM_INIT();
@@ -213,40 +231,41 @@ void setup() {
 
   Serial.print("AP IP address: ");
   Serial.println(IP);
-  // WebSerial is accessible at "<IP Address>/webserial" in browser
   WebSerial.begin(&server);
+
   /* Attach Message Callback */
   WebSerial.msgCallback(recvMsg);
+
   server.begin();
-  delay(1000);
+  delay(500);
   home_robot();
 }
 
+
 void loop(){
   if (Serial.available()){
-    // testing();
-    line = Serial.readString();
-    incomming = line.c_str();
-    WebSerial.println(line);
+    readStringUntil(read_msg, '\n', 40);
+    incomming = read_msg.c_str();
+    WebSerial.print(" Recived MSG :");
+    WebSerial.println(read_msg);
     sscanf(incomming, "[%i]", &execution_type);
 
-    if (execution_type == 1)  // Homing of robot requested
+    if (execution_type == 1)  // Robotic arm Homing
     {
       home_robot();
     }
-    else if (execution_type == 2)  // jog mode
+    else if (execution_type == 2)  // jog mode.
     {
       sscanf(incomming, "[%i][%i][%i][%i]", &execution_type, &jog_pos, &servo_speed, &servo_id);
       jog_executor();
-      Serial.println("ok");
     }
-    else if (execution_type == 3 or execution_type == 4)  // teach mode and run mode
+    else if (execution_type == 3 or execution_type == 4)  // teach mode and run mode.
     {
       sscanf(incomming, "[%i][%i][%i][%i][%i][%i][%i][%i]",&execution_type, &J0_POS, &J1_POS, &J2_POS, &J3_POS, &J4_POS, &J5_POS, &servo_speed);
       trajectroy_executor();
     }
     
-    web_serial_pos_state();
+    // web_serial_pos_state(); // Updating POS on Web.
   }
 }
 
