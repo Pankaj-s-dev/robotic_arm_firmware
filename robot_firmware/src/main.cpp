@@ -127,13 +127,14 @@ void smooth_trajectory_driver(){
 }
 
 void trajectroy_executor(){
-  if (J0.read() > J0_POS)
   J0.write(J0_POS);
   J1.write(J1_POS);
   J2.write(J2_POS);
   J3.write(J3_POS);
   J4.write(J4_POS);
   J5.write(J5_POS);
+  delay(10);
+  WebSerial.println("ok");
   Serial.println("ok");
   // Serial.println(J0.read());
 }
@@ -237,6 +238,7 @@ void loop(){
     {
       sscanf(incomming, "[%i][%i][%i][%i]", &execution_type, &jog_pos, &servo_speed, &servo_id);
       jog_executor();
+      Serial.println("ok");
     }
     else if (execution_type == 3 or execution_type == 4)  // teach mode and run mode
     {
@@ -244,7 +246,7 @@ void loop(){
       trajectroy_executor();
     }
     
-    //web_serial_pos_state();
+    web_serial_pos_state();
   }
 }
 
